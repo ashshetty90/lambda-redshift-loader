@@ -1,0 +1,58 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: sls-redshift-loader # NOTE: update this with your service name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  staging:
+    accountId: 1111111111
+  production:
+    accountId: 2222222222
+  prune:
+    automatic: true
+    number: 2 # number of versions to keep
+
+
+provider:
+  name: aws
+  cfLogs: true
+  region: eu-west-1
+
+functions:
+  redshift-loader:
+    name: redshift-loader
+    region: eu-west-1
+    runtime: python3.6
+    handler: redshift-loader.handler
+    environment:
+      CONFIG_FILE: config/${self:custom.stage}.yml
+    role: arn:aws:iam::${self:custom.${opt:stage}.accountId}:role/service-role/sls-redshift-loader-role
+    memorySize: 256
+    timeout: 300
+    events:
+      - existingS3:
+          bucket: BUCKET_NAME
+          events:
+            - s3:ObjectCreated:*
+          rules:
+            - prefix: clean/
+            - suffix: .csv.gz
+
+plugins:
+  - serverless-prune-plugin
+  - serverless-python-requirements
