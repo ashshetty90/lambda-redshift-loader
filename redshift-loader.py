@@ -45,6 +45,9 @@ def handler(event, context):
                 cur = conn.cursor()
                 cur.execute(copy_sql)
                 conn.commit()
+                return
         except Exception as e:
             print("Exception occured while loading data into redshift"+e) 
+            return
+    return        
                 
